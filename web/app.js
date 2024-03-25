@@ -1,9 +1,12 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = 8080;
+const port = 8082;
 const bodyParser = require('body-parser');
 const {PubSub} = require('@google-cloud/pubsub');
+const {Firestore} = require('@google-cloud/firestore');
+
+const firestore = new Firestore();
 
 // MIDDLEWARE
 app.use(bodyParser.urlencoded( { extended: false}) );
@@ -22,13 +25,16 @@ app.post('/subscribe', async (req, res) => {
   const email = req.body.email_address;
   const regions = req.body.watch_region;
 
+
+
   // Create a PubSub client
   const pubSubClient = new PubSub();
 
   // Create the "payload" for our message
   const message_data = JSON.stringify({
     email_address: email,
-    watch_regions: regions
+    watch_regions: regions,
+    
   });
 
   // Create a data buffer that allows us to stream the message to the topic
@@ -39,10 +45,21 @@ app.post('/subscribe', async (req, res) => {
 
   console.log(`Message ID: ${messageID}`);
 
+  // insert into fire
+  // Insert message_data into Firestore
+  await firestore.collection('subscribers').add(JSON.parse(message_data));
+
+
   res.status(200).send(`Thanks for signing up for TravelDeals.<br/>Message ID: ${messageID}`);
 
 });
 
 app.listen(port, () => {
   console.log(`TravelDeals Web App listening on port ${port}`);
+
+
 });
+
+
+
+
